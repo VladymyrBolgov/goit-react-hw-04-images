@@ -15,8 +15,7 @@ const App = () => {
   const [images, setImages] = useState([]);
   const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  //--------------------------------
-  
+
   useEffect(() => {
       if (!value) {
         return;
