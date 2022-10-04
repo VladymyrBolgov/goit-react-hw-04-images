@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { useState, useEffect } from "react";
 import { Notify } from "notiflix";
 import { Global } from '@emotion/react'
 import { GlobalStyles } from "./GlobalStyles.styled";
@@ -10,78 +10,62 @@ import Button from "./Button";
 import Searchbar from "./Searchbar";
 import ImageGallery from "./ImageGallery";
 
-class App extends Component {
-  state = {
-    value: '',
-    images: [],
-    page: 1,
-    isLoading: false,
-  };
-
-  componentDidUpdate(_, prevState) {
-    if (
-      prevState.page !== this.state.page ||
-      prevState.value !== this.state.value
-    ) {
-      this.findImages();
-    }
-  }
-
-  addValue = ({ inputValue }) => {
-    if (inputValue !== this.state.value) {
-      this.setState({
-        value: inputValue,
-        images: [],
-        page: 1,
-      });
+const App = () => {
+  const [value, setValue] = useState("");
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  //--------------------------------
+  
+  useEffect(() => {
+      if (!value) {
+        return;
+      }
+    const findImages = async () => {
+      try {
+        setIsLoading(true);
+        const photos = await getImages(value, page);
+        photos.hits.length === 0
+          ? Notify.failure(
+            'Sorry! There is no photo with this name. Try something else!'
+          )
+          : setImages(images => [...images, ...photos.hits]);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    findImages();
+  }, [value, page]);
+   
+  const addValue = ({ inputValue }) => {
+    if (inputValue !== value) {
+      setValue(inputValue);
+      setImages([]);
+      setPage(1);
     } else {
-      this.setState({
-        value: inputValue,
-      });
+      setValue(inputValue);
     }
   };
-
-  loadMore = () => {
-    this.setState(prevState => ({ page: prevState.page + 1 }));
-  };
-
-  findImages = async () => {
-    try {
-      this.setState({ isLoading: true });
-      const photos = await getImages(this.state.value, this.state.page);
-      photos.hits.length === 0
-        ? Notify.failure(
-          'Sorry! There is no photo with this name. Try something else!'
-        )
-        : this.setState(prevState => ({
-          images: [...prevState.images, ...photos.hits],
-        }));
-    } catch (error) {
-      console.log(error);
-    } finally {
-      this.setState({ isLoading: false });
-    }
-  }
-
-  render() {
-    const { images, isLoading } = this.state;
+    
     return (
       <AppBox>
         <Global styles={GlobalStyles} />
-        <Searchbar onSubmit={this.addValue} />
+        <Searchbar onSubmit={addValue} />
         {isLoading && images.length === 0 ? (
           <Loader />
         ) : (
           <ImageGallery items={images} />
         )}
-        {images.length % 2 === 0 && images.length !== 0 ? (
-          <Button onClick={this.loadMore} />
+        {images.length % 12 === 0 && images.length !== 0 ? (
+          <Button onClick={() => setPage(() => page + 1)} />
         ) : (
           ''
         )}
       </AppBox>
     );
   }
-}
+
   
 export default App;
